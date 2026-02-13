@@ -1,4 +1,7 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 import requests
 from urllib.parse import urlparse
 from datetime import datetime, timezone
@@ -126,6 +129,8 @@ def index():
                 "error": error,
             }
 
+            app.config["LAST_RESULT"] = result
+
         except Exception as e:
             result = {
                 "input": raw,
@@ -147,6 +152,53 @@ def index():
         result=result,
         donate_url=DONATE_URL,
         year=datetime.now().year
+    )
+@app.route("/report.pdf")
+def report_pdf():
+    data = app.config.get("LAST_RESULT")
+    if not data:
+        return "No report available. Run a scan first.", 400
+
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, y, "CyberCheck Security Report")
+    y -= 30
+
+    c.setFont("Helvetica", 11)
+    c.drawString(50, y, f"URL: {data.get('final_url')}")
+    y -= 20
+    c.drawString(50, y, f"HTTPS: {'Yes' if data.get('https') else 'No'}")
+    y -= 20
+    c.drawString(50, y, f"Score: {data.get('score')}/100")
+    y -= 20
+    c.drawString(50, y, f"Grade: {data.get('grade')}")
+    y -= 30
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Redirects:")
+    y -= 20
+
+    c.setFont("Helvetica", 10)
+    for r in data.get("redirects", []):
+        c.drawString(60, y, r)
+        y -= 15
+        if y < 50:
+            c.showPage()
+            y = height - 50
+
+    c.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="cybercheck-report.pdf",
+        mimetype="application/pdf"
     )
 
 if __name__ == "__main__":
