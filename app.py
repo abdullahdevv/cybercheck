@@ -6,6 +6,7 @@ import requests
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 import socket, ssl
+import os
 
 app = Flask(__name__)
 
@@ -19,6 +20,8 @@ RECOMMENDED = [
 ]
 
 DONATE_URL = "https://buymeacoffee.com/cyberguard"
+
+PRO_CODE = os.getenv("PRO_CODE", "")
 
 def normalize_url(u: str) -> str:
     u = u.strip()
@@ -155,6 +158,10 @@ def index():
     )
 @app.route("/report.pdf")
 def report_pdf():
+    code = request.args.get("code", "")
+    if code != PRO_CODE:
+        return "Pro feature. Please support the project to unlock PDF reports.", 403
+
     data = app.config.get("LAST_RESULT")
     if not data:
         return "No report available. Run a scan first.", 400
