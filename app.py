@@ -10,6 +10,9 @@ import os
 
 app = Flask(__name__)
 
+# Allow custom domain
+app.config['SERVER_NAME'] = 'abdullahiq.site'
+
 RECOMMENDED = [
     ("Strict-Transport-Security", "Enforces HTTPS (HSTS) to prevent downgrade attacks."),
     ("Content-Security-Policy", "Helps mitigate XSS and content injection."),
