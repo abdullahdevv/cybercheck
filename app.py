@@ -9,13 +9,15 @@ import socket, ssl
 import os
 
 app = Flask(__name__)
-from flask import redirect, request
+
+from flask import request, redirect
 
 @app.before_request
-def redirect_root_to_subdomain():
+def force_domain():
     host = request.host.split(':')[0]
-    if host in ("abdullahiq.site", "www.abdullahiq.site"):
+    if host in ["abdullahiq.site", "www.abdullahiq.site"]:
         return redirect("https://cybercheck.abdullahiq.site" + request.full_path, code=301)
+        
 # Allow custom domain
 app.config['SERVER_NAME'] = 'abdullahiq.site'
 
